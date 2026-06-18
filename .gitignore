@@ -1,0 +1,23 @@
+# Ambiente Python (pesado, não vai pro Git)
+venv/
+__pycache__/
+*.pyc
+
+# Dataset de imagens e landmarks (pesados, ficam só na sua máquina)
+dataset/
+libras-platform/treino/dataset_landmarks.json
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+
+# Logs e ambiente
+*.log
+.env
+
+# Dependências (caso use Node em algum momento)
+node_modules/
