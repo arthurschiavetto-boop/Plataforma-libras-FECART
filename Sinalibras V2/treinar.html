@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SinaLibras — Treinar modelo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/treinador.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="4" r="2"/><circle cx="5" cy="10" r="2"/><circle cx="19" cy="10" r="2"/>
+      <circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/>
+      <path d="M12 4 5 10M12 4l7 6M5 10l3 8M19 10l-3 8M8 18h8"/>
+    </svg>
+    <span class="brand-name">SinaLibras · Treino</span>
+  </div>
+  <a class="brand-lang" href="index.html">voltar ao reconhecimento</a>
+</header>
+
+<main class="page">
+
+  <section class="intro">
+    <h1>Colete e treine, tudo aqui</h1>
+    <p>Grave exemplos de cada letra e treine a rede no próprio navegador. O
+       modelo sai pronto para substituir o <code>js/modelo.json</code> —
+       nenhum Python envolvido.</p>
+  </section>
+
+  <div class="workspace">
+
+    <section class="stage">
+      <div class="frame">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+
+        <div class="overlay" id="overlayIdle">
+          <h2>Ligar a câmera</h2>
+          <p>Tudo roda no seu dispositivo. Nenhuma imagem sai daqui.</p>
+          <button class="btn btn-primary" id="btnRequest">Ligar câmera</button>
+        </div>
+
+        <div class="overlay hidden" id="overlayLoading">
+          <div class="spinner" aria-hidden="true"></div>
+          <p id="loadingMsg">Solicitando acesso à câmera…</p>
+        </div>
+
+        <div class="overlay hidden" id="overlayError">
+          <h2 id="errorTitle">Acesso negado</h2>
+          <p id="errorMsg">Libere a permissão de câmera no navegador.</p>
+          <button class="btn btn-outline" id="btnRetry">Tentar de novo</button>
+        </div>
+
+        <div class="cue hidden" id="cue"><span id="cueText">A</span></div>
+        <div class="hand-flag hidden" id="handFlag">nenhuma mão à vista</div>
+      </div>
+
+      <div class="stage-bar hidden" id="stageBar">
+        <span class="live"><i></i><span id="handStatus">aguardando mão</span></span>
+        <button class="btn btn-quiet" id="btnStop">Desligar</button>
+      </div>
+
+      <p class="tip">
+        Grave cada letra em <strong>duas ou três rajadas separadas</strong>,
+        mudando distância, ângulo e iluminação entre elas. Variedade vale mais
+        que quantidade: 200 amostras iguais ensinam menos que 80 variadas.
+      </p>
+    </section>
+
+    <aside class="panel">
+      <div class="letters-head">
+        <span class="eyebrow">Letras · <span id="totalCount">0</span> amostras</span>
+        <span class="eyebrow" id="rajadaInfo">rajada de 2s</span>
+      </div>
+      <div class="letter-buttons" id="letterButtons"></div>
+
+      <div class="train-box">
+        <button class="btn btn-primary" id="btnTrain" disabled>Treinar modelo</button>
+        <div class="progress hidden" id="progress"><i id="progressBar"></i></div>
+        <p class="train-status" id="trainStatus">Colete pelo menos 30 amostras de cada letra.</p>
+        <div class="result hidden" id="result"></div>
+      </div>
+
+      <div class="file-actions">
+        <button class="btn btn-quiet btn-sm" id="btnDownloadModel" disabled>Baixar modelo.json</button>
+        <button class="btn btn-quiet btn-sm" id="btnDownloadData" disabled>Baixar dataset</button>
+        <label class="btn btn-quiet btn-sm file-label">
+          Carregar dataset
+          <input type="file" id="fileInput" accept="application/json" hidden>
+        </label>
+        <button class="btn btn-quiet btn-sm danger-btn" id="btnClear" disabled>Apagar tudo</button>
+      </div>
+    </aside>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <span>SinaLibras · treino no navegador · FECAP</span>
+  <a href="index.html">Reconhecimento</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="js/features.js"></script>
+<script src="js/rede.js"></script>
+<script src="js/treinador.js"></script>
+</body>
+</html>

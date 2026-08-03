@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SinaLibras — Reconhecimento do alfabeto manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="4" r="2"/><circle cx="5" cy="10" r="2"/><circle cx="19" cy="10" r="2"/>
+      <circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/>
+      <path d="M12 4 5 10M12 4l7 6M5 10l3 8M19 10l-3 8M8 18h8"/>
+    </svg>
+    <span class="brand-name">SinaLibras</span>
+  </div>
+  <span class="brand-lang">Libras · alfabeto manual</span>
+</header>
+
+<main class="page">
+
+  <section class="intro">
+    <h1>Teste seu conhecimento em Libras</h1>
+  </section>
+
+  <div class="workspace">
+
+    <!-- ── Câmera ───────────────────────────────────────────── -->
+    <section class="stage">
+      <div class="frame" id="frame">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+
+        <div class="overlay" id="overlayIdle">
+          <h2>Ligar a câmera</h2>
+          <button class="btn btn-primary" id="btnRequest">Ligar câmera</button>
+        </div>
+
+        <div class="overlay hidden" id="overlayLoading">
+          <div class="spinner" aria-hidden="true"></div>
+          <p id="loadingMsg">Solicitando acesso à câmera…</p>
+        </div>
+
+        <div class="overlay hidden" id="overlayError">
+          <h2 id="errorTitle">Acesso negado</h2>
+          <p id="errorMsg">Libere a permissão de câmera no navegador para continuar.</p>
+          <button class="btn btn-outline" id="btnRetry">Tentar de novo</button>
+        </div>
+
+        <div class="cue hidden" id="cue"><span id="cueText">3</span></div>
+        <div class="hand-flag hidden" id="handFlag">nenhuma mão à vista</div>
+      </div>
+
+      <div class="stage-bar hidden" id="stageBar">
+        <span class="live"><i></i>câmera ativa</span>
+        <div class="stage-bar-right">
+          <select id="cameraSelect" aria-label="Selecionar câmera"></select>
+          <button class="btn btn-quiet" id="btnStop">Desligar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Painel de leitura ────────────────────────────────── -->
+    <aside class="panel">
+
+      <div class="capture">
+        <button class="rec" id="btnRecord" disabled aria-label="Gravar sinal">
+          <svg class="rec-ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="rec-track" cx="60" cy="60" r="54"/>
+            <circle class="rec-progress" id="recProgress" cx="60" cy="60" r="54"/>
+          </svg>
+          <span class="rec-core"></span>
+        </button>
+        <p class="capture-hint" id="recordHint">Ligue a câmera para gravar</p>
+      </div>
+
+      <div class="readout">
+        <span class="eyebrow">Letra reconhecida</span>
+        <div class="glyph" id="resultLetter">—</div>
+        <p class="verdict" id="resultVerdict">Nenhuma gravação ainda.</p>
+
+        <div class="ranking hidden" id="ranking"></div>
+      </div>
+
+      <div class="log">
+        <div class="log-head">
+          <span class="eyebrow">Gravações</span>
+          <button class="btn btn-quiet btn-sm" id="btnClearLog">Limpar</button>
+        </div>
+        <ul class="log-list" id="logList">
+          <li class="log-empty">As leituras aparecem aqui.</li>
+        </ul>
+      </div>
+
+    </aside>
+  </div>
+
+  <details class="diag">
+    <summary>Diagnóstico do sistema</summary>
+    <ul>
+      <li><span>Suporte do navegador</span><span class="diag-val" id="diagSupport">verificando…</span></li>
+      <li><span>Contexto seguro (HTTPS)</span><span class="diag-val" id="diagSecure">verificando…</span></li>
+      <li><span>Permissão da câmera</span><span class="diag-val" id="diagPermission">verificando…</span></li>
+      <li><span>Câmeras encontradas</span><span class="diag-val" id="diagDevices">—</span></li>
+      <li><span>MediaPipe Hands</span><span class="diag-val" id="diagMediapipe">aguardando…</span></li>
+      <li><span>Modelo treinado</span><span class="diag-val" id="diagModel">aguardando…</span></li>
+    </ul>
+  </details>
+
+</main>
+
+<footer class="footer">
+  <span>SinaLibras · projeto acadêmico FECAP</span>
+  <a href="treinar.html">Coletar e treinar</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="js/features.js"></script>
+<script src="js/modelo.js"></script>
+<script src="js/camera.js"></script>
+</body>
+</html>

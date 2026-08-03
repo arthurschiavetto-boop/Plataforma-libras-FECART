@@ -1,0 +1,420 @@
+/* SinaLibras — tema claro
+   A identidade vem do próprio objeto do projeto: a mão do MediaPipe é um
+   grafo de 21 pontos ligados por arestas. O símbolo, o botão de gravação e
+   a grade de letras repetem esse vocabulário de ponto-e-linha. */
+
+:root {
+  --paper:  #ffffff;
+  --panel:  #f4f5f7;
+  --line:   #e2e5ea;
+  --ink:    #14171c;
+  --muted:  #626b78;
+  --accent: #3a2be0;
+  --accent-soft: #eeecff;
+  --warn:   #b4530a;
+
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --r: 14px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+
+button, select { font: inherit; }
+
+/* ── topo ──────────────────────────────────────────────── */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; }
+
+.brand-mark {
+  width: 24px; height: 24px;
+  fill: var(--accent);
+  stroke: var(--accent);
+  stroke-width: 1.2;
+}
+
+.brand-name {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.brand-lang {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+}
+
+/* ── layout ────────────────────────────────────────────── */
+
+.page { max-width: 1120px; margin: 0 auto; padding: 40px 28px 64px; }
+
+.intro { max-width: 620px; margin-bottom: 32px; }
+.intro h1 { font-size: clamp(28px, 4vw, 42px); line-height: 1.1; }
+.intro p { color: var(--muted); margin: 14px 0 0; }
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── câmera ────────────────────────────────────────────── */
+
+.frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.frame video,
+.frame canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Só o vídeo é espelhado no CSS. O canvas já sai espelhado do camera.js
+   (ctx.scale(-1,1)) — espelhar aqui de novo inverteria o desenho e o
+   polegar apareceria do lado errado da mão. */
+.frame video { transform: scaleX(-1); }
+
+.frame canvas { pointer-events: none; }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  text-align: center;
+  background: var(--panel);
+}
+
+.overlay h2 { font-size: 20px; }
+.overlay p { color: var(--muted); max-width: 34ch; margin: 0; font-size: 14px; }
+
+.hidden { display: none !important; }
+
+.spinner {
+  width: 26px; height: 26px;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* contagem antes da gravação */
+.cue {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,.6);
+  font-family: var(--display);
+  font-size: 88px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.05em;
+}
+
+.cue.rec-on {
+  background: none;
+  font-size: 15px;
+  align-content: end;
+  padding-bottom: 24px;
+}
+
+.hand-flag {
+  position: absolute;
+  left: 12px; bottom: 12px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(20,23,28,.78);
+  color: #fff;
+  font-size: 12px;
+}
+
+.stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.stage-bar-right { display: flex; gap: 8px; align-items: center; }
+
+.live { display: inline-flex; align-items: center; gap: 7px; }
+.live i {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #17a06b;
+  box-shadow: 0 0 0 3px rgba(23,160,107,.16);
+}
+
+select {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 9px;
+  padding: 6px 10px;
+  color: var(--ink);
+  font-size: 13px;
+  max-width: 190px;
+}
+
+/* ── botões ────────────────────────────────────────────── */
+
+.btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #2f21c4; }
+
+.btn-outline { background: none; border: 1px solid var(--line); color: var(--ink); }
+.btn-outline:hover { border-color: var(--ink); }
+
+.btn-quiet { background: none; color: var(--muted); padding: 6px 10px; }
+.btn-quiet:hover { color: var(--ink); }
+
+.btn-sm { font-size: 12px; }
+
+/* ── painel ────────────────────────────────────────────── */
+
+.panel { display: flex; flex-direction: column; gap: 22px; }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--muted);
+}
+
+/* botão de gravação: o anel é o progresso da captura */
+.capture { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+.rec {
+  position: relative;
+  width: 108px; height: 108px;
+  border: 0; padding: 0;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.rec:disabled { cursor: not-allowed; opacity: .4; }
+
+.rec-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.rec-track { fill: none; stroke: var(--line); stroke-width: 6; }
+.rec-progress {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 339.3;
+  stroke-dashoffset: 339.3;
+  transition: stroke-dashoffset .1s linear;
+}
+
+.rec-core {
+  width: 62px; height: 62px;
+  border-radius: 50%;
+  background: var(--accent);
+  transition: border-radius .2s, transform .2s, background .2s;
+}
+
+.rec:not(:disabled):hover .rec-core { transform: scale(1.06); }
+.rec.is-recording .rec-core { border-radius: 14px; transform: scale(.72); background: #d0342c; }
+
+.rec:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 50%; }
+
+.capture-hint { margin: 0; font-size: 13px; color: var(--muted); text-align: center; }
+
+/* leitura */
+.readout {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 20px;
+}
+
+.glyph {
+  font-family: var(--display);
+  font-size: 92px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  margin: 6px 0 4px;
+}
+
+.glyph.uncertain { color: var(--warn); font-size: 44px; letter-spacing: -0.02em; }
+
+.verdict { margin: 0; font-size: 13px; color: var(--muted); }
+
+.hands-note {
+  margin: 0 0 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.ranking { margin-top: 16px; display: flex; flex-direction: column; gap: 7px; }
+
+.rank-row { display: grid; grid-template-columns: 18px 1fr 44px; align-items: center; gap: 10px; }
+.rank-row b { font-family: var(--mono); font-weight: 600; font-size: 13px; }
+.rank-row span { font-family: var(--mono); font-size: 12px; color: var(--muted); text-align: right; }
+.rank-bar { height: 5px; border-radius: 999px; background: var(--panel); overflow: hidden; }
+.rank-bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.rank-row:not(:first-child) .rank-bar i { background: #b9b4ef; }
+
+/* gravações */
+.log-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+
+.log-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+
+.log-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: var(--panel);
+  font-size: 13px;
+}
+
+.log-list li b { font-family: var(--mono); font-size: 15px; min-width: 16px; }
+.log-list li em { font-style: normal; color: var(--muted); margin-left: auto; font-family: var(--mono); font-size: 12px; }
+.log-empty { background: none !important; color: var(--muted); padding-left: 0 !important; }
+
+/* ── escopo ────────────────────────────────────────────── */
+
+.scope {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+  max-width: 680px;
+}
+
+.scope h3 { font-size: 17px; }
+.scope p { color: var(--muted); margin: 10px 0 20px; }
+.scope strong { color: var(--ink); font-weight: 600; }
+
+.letters { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.letters span {
+  width: 34px; height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.letters span.off {
+  background: none;
+  border: 1px dashed var(--line);
+  color: #aeb4bd;
+  text-decoration: line-through;
+}
+
+/* ── diagnóstico ───────────────────────────────────────── */
+
+.diag { margin-top: 40px; font-size: 13px; }
+.diag summary { cursor: pointer; color: var(--muted); }
+.diag summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.diag ul { list-style: none; margin: 14px 0 0; padding: 0; max-width: 420px; }
+.diag li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+.diag-val { font-family: var(--mono); font-size: 12px; color: var(--ink); }
+.diag-val.ok { color: #17a06b; }
+.diag-val.fail { color: #c0392b; }
+
+/* ── rodapé ────────────────────────────────────────────── */
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 28px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.footer a { color: var(--accent); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* ── responsivo ────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .workspace { grid-template-columns: 1fr; }
+  .page { padding: 28px 20px 48px; }
+  .topbar, .footer { padding-inline: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

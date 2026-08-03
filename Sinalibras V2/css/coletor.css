@@ -1,0 +1,109 @@
+/* SinaLibras — estilos específicos do coletor de dataset.
+   Herda as variáveis e os componentes base do style.css. */
+
+.intro-sub { color: var(--muted); margin: 14px 0 0; max-width: 62ch; }
+
+.brand-lang { text-decoration: none; }
+.brand-lang:hover { color: var(--ink); }
+
+.stage { max-width: 720px; }
+
+.collector {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 720px;
+}
+
+.collector-row { display: flex; flex-direction: column; gap: 8px; }
+
+.collector-row label,
+.field-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--muted);
+}
+
+.text-input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--paper);
+  max-width: 220px;
+}
+
+.text-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+
+/* alternador de modo de captura */
+.seg {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--panel);
+  border-radius: 11px;
+  width: fit-content;
+}
+
+.seg-btn {
+  border: 0;
+  background: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.seg-btn.active { background: var(--paper); color: var(--ink); font-weight: 500; box-shadow: 0 1px 2px rgba(20,23,28,.08); }
+.seg-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.collector-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.dataset-summary { border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px; }
+
+.summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.summary-head h3 { font-size: 15px; font-weight: 600; }
+.summary-buttons { display: flex; gap: 4px; }
+.danger-btn:hover { color: #c0392b; }
+
+.label-list { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+
+.label-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.label-list li b { font-family: var(--mono); font-weight: 600; }
+.label-list .empty { background: none; color: var(--muted); padding-left: 0; }
+
+.note {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.note strong { color: var(--ink); font-weight: 600; }
+.note p { margin: 0; }
+
+.status-left { display: flex; align-items: center; gap: 8px; }
