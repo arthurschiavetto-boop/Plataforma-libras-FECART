@@ -1,23 +1,18 @@
-# Ambiente Python (pesado, não vai pro Git)
-venv/
+# Python (fluxo opcional em treino/)
 __pycache__/
 *.pyc
+.venv/
+venv/
 
-# Dataset de imagens e landmarks (pesados, ficam só na sua máquina)
-dataset/
-libras-platform/treino/dataset_landmarks.json
+# Datasets brutos (podem ser grandes; backup fica no seu navegador/local)
+treino/dataset.json
+treino/dataset*.json
+dataset-sinalibras-*.json
 
-# Sistema operacional
+# Sistema
 .DS_Store
 Thumbs.db
 
-# Editores
+# Editor
 .vscode/
-.idea/
-
-# Logs e ambiente
-*.log
-.env
-
-# Dependências (caso use Node em algum momento)
-node_modules/
+*.swp
