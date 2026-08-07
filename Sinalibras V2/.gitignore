@@ -1,18 +1,15 @@
-# Python (fluxo opcional em treino/)
 __pycache__/
 *.pyc
 .venv/
 venv/
 
-# Datasets brutos (podem ser grandes; backup fica no seu navegador/local)
+treino/dataset/
 treino/dataset.json
 treino/dataset*.json
 dataset-sinalibras-*.json
 
-# Sistema
 .DS_Store
 Thumbs.db
 
-# Editor
 .vscode/
 *.swp
