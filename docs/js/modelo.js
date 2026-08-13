@@ -4,27 +4,43 @@
  * As features vêm do features.js. O modelo.json diz qual versão ele espera
  * no campo "features"; modelos antigos, sem esse campo, são tratados como v1.
  *
- * As letras H, J, K, X e Z são feitas com movimento e não têm pose única.
- * Se existirem no modelo, suas saídas são zeradas antes do softmax, então
- * nunca aparecem como resposta e param de roubar probabilidade das outras.
+ * Cada idioma tem seu próprio arquivo em models/<idioma>/alfabeto.json.
+ * As letras feitas com movimento (ver idiomas.js) têm suas saídas zeradas
+ * antes do softmax, então nunca aparecem como resposta. Em Libras são
+ * cinco; em ASL, só J e Z.
  */
 
 const SignModel = (() => {
   "use strict";
 
-  const EXCLUIDAS = ["H", "J", "K", "X", "Z"];
-
   let model = null;
   let ready = false;
   let keep = [];
   let versaoFeatures = "v1";
+  let idiomaAtual = null;
 
-  async function load(url = "js/modelo.json") {
+  /**
+   * Carrega o modelo de um idioma a partir de models/<idioma>/alfabeto.json.
+   * Para o Libras, tambem aceita o caminho antigo js/modelo.json, assim o
+   * site continua funcionando antes de mover o arquivo de lugar.
+   */
+  async function load(idioma = Idiomas.PADRAO) {
+    const caminhos = [Idiomas.caminhoModelo(idioma)];
+    if (idioma === "libras") caminhos.push("js/modelo.json");
+
     try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("modelo.json não encontrado");
+      let res = null;
+      for (const caminho of caminhos) {
+        const tentativa = await fetch(caminho).catch(() => null);
+        if (tentativa && tentativa.ok) { res = tentativa; break; }
+      }
+      if (!res) throw new Error(`modelo de ${idioma} não encontrado`);
+
       model = await res.json();
+      idiomaAtual = idioma;
       versaoFeatures = model.features || "v1";
+
+      const EXCLUIDAS = Idiomas.excluidas(idioma);
 
       const esperado = model.scaler.mean.length;
       const gerado = versaoFeatures === "v1" ? 63 : 109;
@@ -47,8 +63,9 @@ const SignModel = (() => {
 
   const isReady = () => ready;
   const labels = () => keep.map((i) => model.classes[i]);
-  const excluded = () => EXCLUIDAS.slice();
+  const excluded = () => Idiomas.excluidas(idiomaAtual);
   const featureVersion = () => versaoFeatures;
+  const idioma = () => idiomaAtual;
 
   function standardize(f) {
     const { mean, scale } = model.scaler;
@@ -93,5 +110,5 @@ const SignModel = (() => {
     return { letter: labels()[best], confidence: p[best] };
   }
 
-  return { load, isReady, classify, probabilities, labels, excluded, featureVersion };
+  return { load, isReady, classify, probabilities, labels, excluded, featureVersion, idioma };
 })();

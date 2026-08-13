@@ -77,3 +77,40 @@ recoletar primeiro.
 
 H, J, K, X e Z são puladas automaticamente: são feitas com movimento e não têm
 pose única.
+
+
+---
+
+## Vários idiomas
+
+Os idiomas ficam em `treino/idiomas.py` (gêmeo de `js/idiomas.js`). Cada um
+declara as letras feitas com movimento, que não entram no treino:
+
+| Idioma | Excluídas | Letras reconhecidas |
+|--------|-----------|---------------------|
+| libras | H, J, K, X, Z | 21 |
+| asl    | J, Z          | 24 |
+
+Estrutura de pastas esperada, uma por idioma:
+
+```
+treino/
+  dataset-libras/train/A/ ... test/A/ ...
+  dataset-asl/train/A/ ... test/A/ ...
+```
+
+Fluxo por idioma:
+
+```
+python extrair_landmarks.py --idioma asl
+python treinar.py --idioma asl
+```
+
+Sem `--entrada`/`--saida` ele usa `dataset-<idioma>/`, gera
+`dataset-<idioma>.json` e escreve o modelo em `../models/<idioma>/alfabeto.json`
+(exceto libras, que por padrão continua escrevendo em `../js/modelo.json`,
+para não quebrar o modelo já publicado).
+
+Para acrescentar um terceiro idioma: adicionar a entrada em `idiomas.py` **e**
+em `js/idiomas.js` (as duas precisam bater), montar a pasta do dataset e
+rodar os mesmos dois comandos. Nenhum outro código muda.

@@ -17,7 +17,12 @@ da mão. As features são calculadas depois, no treinar.py — guardar cru é o 
 permite melhorar o extrator sem refazer a extração.
 
     pip install mediapipe==0.10.14 opencv-python
-    python extrair_landmarks.py --entrada dataset --saida dataset.json
+
+    python extrair_landmarks.py --idioma libras
+    python extrair_landmarks.py --idioma asl
+
+Sem --entrada/--saida, ele usa dataset-<idioma>/ e dataset-<idioma>.json.
+As letras feitas com movimento são puladas conforme o idioma (ver idiomas.py).
 """
 
 import argparse
@@ -30,7 +35,7 @@ from pathlib import Path
 import cv2
 import mediapipe as mp
 
-EXCLUIDAS = {"H", "J", "K", "X", "Z"}
+import idiomas
 
 
 def eh_pasta_de_letra(p: Path) -> bool:
@@ -105,17 +110,30 @@ def imprimir_progresso(feito, total, inicio, largura=30):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--entrada", default="dataset",
-                    help="pasta com as letras, ou com train/ e test/ dentro")
-    ap.add_argument("--saida", default="dataset.json")
+    ap.add_argument("--idioma", default=idiomas.PADRAO,
+                    choices=list(idiomas.IDIOMAS),
+                    help="qual alfabeto está sendo extraído")
+    ap.add_argument("--entrada", default=None,
+                    help="pasta com as letras, ou com train/ e test/ dentro "
+                         "(padrão: dataset-<idioma>)")
+    ap.add_argument("--saida", default=None,
+                    help="arquivo de saída (padrão: dataset-<idioma>.json)")
     ap.add_argument("--incluir-dinamicas", action="store_true",
-                    help="não pular H, J, K, X e Z")
+                    help="não pular as letras feitas com movimento")
     args = ap.parse_args()
+
+    excluidas = idiomas.excluidas(args.idioma)
+    entrada = args.entrada or f"dataset-{args.idioma}"
+    saida = args.saida or f"dataset-{args.idioma}.json"
+
+    print(f"idioma: {idiomas.nome(args.idioma)} · "
+          f"{len(idiomas.letras(args.idioma))} letras estáticas · "
+          f"excluídas: {', '.join(sorted(excluidas))}", flush=True)
 
     hands = mp.solutions.hands.Hands(
         static_image_mode=True, max_num_hands=1, min_detection_confidence=0.4)
 
-    raiz = Path(args.entrada)
+    raiz = Path(entrada)
     if not raiz.is_dir():
         raise SystemExit(f"pasta não encontrada: {raiz}")
 
@@ -126,7 +144,7 @@ def main():
     tarefas_validas = []
     for pasta_letra, origem in tarefas:
         letra = pasta_letra.name.upper()
-        if letra in EXCLUIDAS and not args.incluir_dinamicas:
+        if letra in excluidas and not args.incluir_dinamicas:
             continue
         tarefas_validas.append((pasta_letra, origem, letra))
 
@@ -175,13 +193,14 @@ def main():
 
     print()  # fecha a linha da barra de progresso
 
-    payload = {"version": 2, "pointCount": 21, "format": "raw", "samples": amostras}
-    with open(args.saida, "w", encoding="utf-8") as f:
+    payload = {"version": 2, "idioma": args.idioma, "pointCount": 21,
+               "format": "raw", "samples": amostras}
+    with open(saida, "w", encoding="utf-8") as f:
         json.dump(payload, f)
 
     total_tempo = time.time() - inicio
     print(f"\nconcluído em {formatar_tempo(total_tempo)}")
-    print(f"{len(amostras)} amostras salvas em {args.saida}\n")
+    print(f"{len(amostras)} amostras salvas em {saida}\n")
 
     print("amostras por letra:")
     for letra in sorted(por_letra):

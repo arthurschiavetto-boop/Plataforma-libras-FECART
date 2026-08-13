@@ -4,9 +4,10 @@ __pycache__/
 venv/
 
 treino/dataset/
+treino/dataset*/
 treino/dataset.json
 treino/dataset*.json
-dataset-sinalibras-*.json
+**/dataset*.json
 
 .DS_Store
 Thumbs.db

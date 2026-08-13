@@ -78,6 +78,35 @@ button, select { font: inherit; }
   color: var(--muted);
 }
 
+/* seletor de língua de sinais */
+.topbar-right { display: flex; align-items: center; gap: 18px; }
+
+.lang-switch { display: flex; align-items: center; gap: 8px; }
+
+.lang-switch label {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--muted);
+}
+
+.lang-switch select {
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 6px 10px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  max-width: none;
+}
+
+.lang-switch select:hover { border-color: var(--accent); }
+.lang-switch select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 /* ── layout ────────────────────────────────────────────── */
 
 .page { max-width: 1120px; margin: 0 auto; padding: 40px 28px 64px; }

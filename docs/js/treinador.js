@@ -9,12 +9,14 @@
 (() => {
   "use strict";
 
-  // Letras de configuração fixa. H, J, K, X e Z são feitas com movimento e
-  // não têm pose única, por isso ficam de fora.
-  const LETRAS = "ABCDEFGILMNOPQRSTUVWY".split("");
   const RAJADA_MS = 2000;
   const MIN_POR_LETRA = 30;
-  const CHAVE_ARMAZENAMENTO = "sinalibras.dataset.v2";
+
+  // Cada idioma tem seu próprio conjunto de letras e seu próprio dataset
+  // guardado no navegador — trocar de idioma não mistura as amostras.
+  let idiomaAtual = Idiomas.PADRAO;
+  let LETRAS = Idiomas.letras(idiomaAtual);
+  const chaveArmazenamento = () => `sinalibras.dataset.v2.${idiomaAtual}`;
 
   const $ = (id) => document.getElementById(id);
 
@@ -97,7 +99,7 @@
 
   function salvarLocal() {
     try {
-      localStorage.setItem(CHAVE_ARMAZENAMENTO, JSON.stringify(amostras));
+      localStorage.setItem(chaveArmazenamento(), JSON.stringify(amostras));
     } catch (e) {
       console.warn("Não deu para guardar no navegador:", e.message);
     }
@@ -105,8 +107,8 @@
 
   function carregarLocal() {
     try {
-      const bruto = localStorage.getItem(CHAVE_ARMAZENAMENTO);
-      if (bruto) amostras = JSON.parse(bruto);
+      const bruto = localStorage.getItem(chaveArmazenamento());
+      amostras = bruto ? JSON.parse(bruto) : [];
     } catch (e) {
       console.warn("Não deu para ler o dataset guardado:", e.message);
     }
@@ -133,7 +135,8 @@
       },
     });
 
-    modeloTreinado = r.modelo;
+    modeloTreinado = Object.assign(
+      { idioma: idiomaAtual, nome: Idiomas.nome(idiomaAtual) }, r.modelo);
     $("progress").classList.add("hidden");
     $("btnTrain").disabled = false;
     $("btnDownloadModel").disabled = false;
@@ -282,12 +285,12 @@
   $("btnTrain").onclick = treinar;
 
   $("btnDownloadModel").onclick = () => {
-    if (modeloTreinado) baixar("modelo.json", modeloTreinado);
+    if (modeloTreinado) baixar("alfabeto.json", modeloTreinado);
   };
 
   $("btnDownloadData").onclick = () => baixar(
-    `dataset-sinalibras-${Date.now()}.json`,
-    { version: 2, pointCount: 21, format: "raw", samples: amostras });
+    `dataset-${idiomaAtual}-${Date.now()}.json`,
+    { version: 2, idioma: idiomaAtual, pointCount: 21, format: "raw", samples: amostras });
 
   $("fileInput").onchange = async (e) => {
     const arquivo = e.target.files[0];
@@ -317,8 +320,35 @@
 
   window.addEventListener("beforeunload", stopCamera);
 
+  function montarSeletorIdioma() {
+    const seletor = $("idioma");
+    if (!seletor) return;
+    seletor.innerHTML = "";
+    for (const id of Idiomas.lista()) {
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = Idiomas.nome(id);
+      seletor.appendChild(opt);
+    }
+    seletor.value = idiomaAtual;
+
+    seletor.onchange = (e) => {
+      if (gravando) return;
+      idiomaAtual = e.target.value;
+      LETRAS = Idiomas.letras(idiomaAtual);
+      modeloTreinado = null;
+      $("btnDownloadModel").disabled = true;
+      $("result").classList.add("hidden");
+      montarBotoes();
+      carregarLocal();
+      atualizarContagens();
+      for (const b of document.querySelectorAll(".letter-btn")) b.disabled = !stream;
+    };
+  }
+
   // ── início ──────────────────────────────────────────────
 
+  montarSeletorIdioma();
   montarBotoes();
   carregarLocal();
   atualizarContagens();

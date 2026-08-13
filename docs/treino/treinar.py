@@ -8,7 +8,13 @@ os pesos em JSON. O site executa essa rede em JavaScript puro — não precisa d
 TensorFlow.js nem de servidor.
 
     pip install scikit-learn numpy
-    python treinar.py --entrada dataset.json --saida ../js/modelo.json
+
+    python treinar.py --idioma libras
+    python treinar.py --idioma asl
+
+Sem --entrada/--saida ele lê dataset-<idioma>.json e escreve o modelo em
+../models/<idioma>/alfabeto.json — exceto para libras, que por padrão ainda
+escreve em ../js/modelo.json, para não quebrar o site atual.
 
 Datasets antigos (com o campo "landmarks" de 63 números já normalizados)
 continuam funcionando: o script detecta e treina em modo v1, mas avisa que a
@@ -17,6 +23,7 @@ qualidade é bem menor.
 
 import argparse
 import json
+from pathlib import Path
 
 import numpy as np
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
@@ -25,12 +32,10 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 import features as F
-
-# Letras feitas com movimento: não têm pose única, então não entram no treino.
-EXCLUIDAS = {"H", "J", "K", "X", "Z"}
+import idiomas
 
 
-def carregar(caminho):
+def carregar(caminho, excluidas):
     with open(caminho, encoding="utf-8") as f:
         data = json.load(f)
 
@@ -39,7 +44,7 @@ def carregar(caminho):
 
     if amostras and "raw" in amostras[0]:
         for s in amostras:
-            if s["label"].upper() in EXCLUIDAS:
+            if s["label"].upper() in excluidas:
                 continue
             X.append(F.v2(s["raw"], s.get("handedness", "Right")))
             y.append(s["label"].upper())
@@ -48,7 +53,7 @@ def carregar(caminho):
         print("AVISO: dataset antigo (features já normalizadas). Treinando em v1.")
         print("       Recolete com o coletor novo para ganhar bastante precisão.\n")
         for s in amostras:
-            if s["label"].upper() in EXCLUIDAS:
+            if s["label"].upper() in excluidas:
                 continue
             X.append(s["landmarks"])
             y.append(s["label"].upper())
@@ -58,14 +63,35 @@ def carregar(caminho):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--entrada", default="dataset.json")
-    ap.add_argument("--saida", default="../js/modelo.json")
+    ap.add_argument("--idioma", default=idiomas.PADRAO,
+                    choices=list(idiomas.IDIOMAS))
+    ap.add_argument("--entrada", default=None,
+                    help="padrão: dataset-<idioma>.json")
+    ap.add_argument("--saida", default=None,
+                    help="padrão: ../js/modelo.json para libras, "
+                         "../models/<idioma>/alfabeto.json para os demais")
     ap.add_argument("--teste", type=float, default=0.2)
     args = ap.parse_args()
 
-    X, y, versao = carregar(args.entrada)
+    entrada = args.entrada or f"dataset-{args.idioma}.json"
+    if args.saida:
+        saida = Path(args.saida)
+    elif args.idioma == "libras":
+        saida = Path("..") / "js" / "modelo.json"
+    else:
+        saida = Path("..") / "models" / args.idioma / "alfabeto.json"
+    saida.parent.mkdir(parents=True, exist_ok=True)
+
+    print(f"idioma: {idiomas.nome(args.idioma)}")
+    X, y, versao = carregar(entrada, idiomas.excluidas(args.idioma))
     classes = sorted(set(y))
     print(f"{len(X)} amostras · {len(classes)} letras · features {versao} ({X.shape[1]} números)")
+
+    esperadas = set(idiomas.letras(args.idioma))
+    faltando_classe = esperadas - set(classes)
+    if faltando_classe:
+        print(f"AVISO: sem amostras para {', '.join(sorted(faltando_classe))} — "
+              "o modelo não vai reconhecer essas letras")
 
     poucas = [c for c in classes if (y == c).sum() < 60]
     if poucas:
@@ -112,16 +138,18 @@ def main():
     export = {
         "version": 2,
         "features": versao,
+        "idioma": args.idioma,
+        "nome": idiomas.nome(args.idioma),
         "classes": rotulos,
         "scaler": {"mean": scaler.mean_.tolist(), "scale": scaler.scale_.tolist()},
         "layers": [{"weights": w.tolist(), "bias": b.tolist()}
                    for w, b in zip(modelo.coefs_, modelo.intercepts_)],
         "activation": "relu",
     }
-    with open(args.saida, "w", encoding="utf-8") as f:
+    with open(saida, "w", encoding="utf-8") as f:
         json.dump(export, f)
 
-    print(f"\nModelo salvo em {args.saida}")
+    print(f"\nModelo salvo em {saida}")
 
 
 if __name__ == "__main__":

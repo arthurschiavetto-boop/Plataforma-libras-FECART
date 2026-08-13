@@ -48,6 +48,7 @@
   const ranking = $("ranking");
   const logList = $("logList");
   const btnClearLog = $("btnClearLog");
+  const seletorIdioma = $("idioma");
 
   const DASH = 339.3;   // circunferência do anel de progresso
 
@@ -87,11 +88,66 @@
     if (!grid || !SignModel.isReady()) return;
     const validas = new Set(SignModel.labels());
     grid.innerHTML = "";
-    for (const letra of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+    for (const letra of Idiomas.ALFABETO) {
       const el = document.createElement("span");
       el.textContent = letra;
       if (!validas.has(letra)) el.classList.add("off");
       grid.appendChild(el);
+    }
+
+    const texto = $("scopeText");
+    if (texto) {
+      const fora = SignModel.excluded();
+      texto.innerHTML =
+        `As <strong>${validas.size} letras</strong> de configuração fixa do alfabeto ` +
+        `manual de ${Idiomas.nome(SignModel.idioma())}. ` +
+        `<strong>${fora.join(", ")} ${fora.length > 1 ? "ficam" : "fica"} de fora</strong>: ` +
+        `${fora.length > 1 ? "são feitas" : "é feita"} com movimento e não ` +
+        `${fora.length > 1 ? "existem" : "existe"} como pose única, então não ` +
+        `${fora.length > 1 ? "podem" : "pode"} ser ${fora.length > 1 ? "classificadas" : "classificada"} ` +
+        `a partir de quadros isolados.`;
+    }
+  }
+
+  function montarSeletorIdioma() {
+    if (!seletorIdioma) return;
+    seletorIdioma.innerHTML = "";
+    for (const id of Idiomas.lista()) {
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = Idiomas.nome(id);
+      seletorIdioma.appendChild(opt);
+    }
+    seletorIdioma.value = Idiomas.PADRAO;
+  }
+
+  /** Troca o idioma: recarrega o modelo e limpa a leitura anterior. */
+  async function trocarIdioma(id) {
+    modoGravacao = "parado";
+    btnRecord.classList.remove("is-recording");
+    btnRecord.disabled = true;
+    cue.classList.add("hidden");
+    setProgresso(0);
+    ranking.classList.add("hidden");
+    resultLetter.classList.remove("uncertain");
+    resultLetter.textContent = "—";
+    resultVerdict.textContent = `Carregando ${Idiomas.nome(id)}…`;
+
+    const ok = await SignModel.load(id);
+    setDiag($("diagModel"),
+      ok ? `${SignModel.labels().length} letras · features ${SignModel.featureVersion()}` : "não carregado",
+      ok ? "ok" : "fail");
+    montarGradeLetras();
+
+    if (ok) {
+      resultVerdict.textContent = "Nenhuma gravação ainda.";
+      btnRecord.disabled = !currentStream;
+      recordHint.textContent = currentStream ? "Gravar sinal" : "Ligue a câmera para gravar";
+    } else {
+      resultVerdict.textContent =
+        `Modelo de ${Idiomas.nome(id)} ainda não treinado. ` +
+        `Colete e treine em "Coletar e treinar".`;
+      recordHint.textContent = "Modelo indisponível";
     }
   }
 
@@ -483,6 +539,14 @@
     desenharHistorico();
   });
 
+  if (seletorIdioma) {
+    seletorIdioma.addEventListener("change", (e) => {
+      historico = [];
+      desenharHistorico();
+      trocarIdioma(e.target.value);
+    });
+  }
+
   document.addEventListener("keydown", (e) => {
     if (e.code === "Space" && e.target === document.body) {
       e.preventDefault();
@@ -502,12 +566,7 @@
     listCameras();
     setProgresso(0);
 
-    SignModel.load().then((ok) => {
-      setDiag($("diagModel"),
-        ok ? `${SignModel.labels().length} letras · features ${SignModel.featureVersion()}` : "não carregado",
-        ok ? "ok" : "fail");
-      montarGradeLetras();
-      if (!ok) recordHint.textContent = "Modelo não carregado — verifique js/modelo.json";
-    });
+    montarSeletorIdioma();
+    trocarIdioma(Idiomas.PADRAO);
   })();
 })();

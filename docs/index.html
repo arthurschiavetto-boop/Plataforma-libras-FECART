@@ -20,7 +20,10 @@
     </svg>
     <span class="brand-name">SinaLibras</span>
   </div>
-  <span class="brand-lang">Libras · alfabeto manual</span>
+  <div class="lang-switch">
+    <label for="idioma">Idioma</label>
+    <select id="idioma" aria-label="Escolher língua de sinais"></select>
+  </div>
 </header>
 
 <main class="page">
@@ -122,6 +125,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="js/idiomas.js"></script>
 <script src="js/features.js"></script>
 <script src="js/modelo.js"></script>
 <script src="js/camera.js"></script>
