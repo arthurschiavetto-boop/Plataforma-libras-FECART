@@ -43,6 +43,15 @@ const Idiomas = (() => {
       // verdade. Sobram 19 estáticas: A B C D E F G I K L M N O P Q R S T U.
       excluidas: ["H", "CH", "J", "LL", "Ñ", "RR", "V", "W", "X", "Y", "Z"],
     },
+    sibi: {
+      nome: "SIBI", pais: "Indonésia",
+      cor: "#CE1126", cor2: "#FFFFFF",
+      // Alfabeto A-Z padrão, uma mão só (o SIBI foi historicamente adaptado
+      // a partir do alfabeto manual americano). Confirmado no quadro do
+      // próprio dataset: J tem gancho e Z tem o traço em zigue-zague no ar
+      // — mesmas duas dinâmicas do ASL.
+      alfabeto: AZ, excluidas: ["J", "Z"],
+    },
   };
 
   const PADRAO = "libras";
