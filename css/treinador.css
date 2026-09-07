@@ -1,0 +1,123 @@
+/* SinaLibras — estilos da página de treino. Herda os tokens do style.css. */
+
+.tip {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 58ch;
+}
+
+.tip strong { color: var(--ink); font-weight: 600; }
+
+code {
+  font-family: var(--mono);
+  font-size: .92em;
+  background: var(--panel);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+.brand-lang { text-decoration: none; }
+.brand-lang:hover { color: var(--ink); }
+
+.letters-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+/* grade de letras: cada botão grava uma rajada e mostra quantas amostras tem */
+.letter-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  gap: 6px;
+}
+
+.letter-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 9px 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+
+.letter-btn b { font-family: var(--display); font-size: 17px; font-weight: 600; }
+.letter-btn span { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+.letter-btn:not(:disabled):hover { border-color: var(--accent); }
+.letter-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.letter-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.letter-btn.parcial { background: #fff8ef; border-color: #f0dcc2; }
+.letter-btn.ok { background: var(--accent-soft); border-color: transparent; }
+.letter-btn.ok b, .letter-btn.ok span { color: var(--accent); }
+
+/* treino */
+.train-box {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.progress {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.progress i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width .12s linear;
+}
+
+.train-status { margin: 0; font-size: 13px; color: var(--muted); font-family: var(--mono); }
+
+.result { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.result .eyebrow { width: 100%; }
+.result .ok-msg { margin: 0; font-size: 13px; color: #17a06b; }
+
+.confusao {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff3f1;
+  color: #a3352c;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.confusao em { font-style: normal; opacity: .65; }
+
+/* arquivos */
+.file-actions {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.file-label { cursor: pointer; }
+.file-label:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.danger-btn:hover { color: #c0392b; }
+
+.cue { font-size: 64px; }

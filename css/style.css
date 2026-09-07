@@ -1,0 +1,652 @@
+/* SinaLibras — identidade visual
+ *
+ * Duas ideias sustentam o desenho:
+ *
+ * 1. A cor não decora, ela informa: --accent e --accent2 vêm da bandeira do
+ *    país que fala a língua selecionada, e são trocadas pelo JS quando o
+ *    usuário muda de idioma. A página inteira se retinge.
+ *
+ * 2. Letra é o assunto do projeto, então a letra é o elemento gráfico
+ *    principal: a serifa (Fraunces) trata o alfabeto como espécime
+ *    tipográfico, enquanto toda a interface fica numa grotesca neutra
+ *    (Archivo), sem competir.
+ */
+
+:root {
+  --paper:  #fcfcfd;
+  --raised: #ffffff;
+  --sunken: #f3f3f6;
+  --line:   #e5e5ec;
+  --line-2: #d2d2de;
+  --ink:    #16161d;
+  --ink-2:  #3d3d4d;
+  --muted:  #5c5c6b;
+  --faint:  #92929f;
+
+  /* trocados pelo JS conforme o idioma — o valor aqui é só o de partida */
+  --accent:  #00694a;
+  --accent2: #f2c200;
+  --accent-wash: #eef4f1;
+
+  --good: #17795a;
+  --warn: #a2570c;
+  --bad:  #b3372c;
+
+  --serif: "Fraunces", Georgia, serif;
+  --sans: "Archivo", system-ui, sans-serif;
+
+  --r: 12px;
+  --r-lg: 20px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
+
+button, select, input { font: inherit; }
+
+::selection { background: var(--accent); color: #fff; }
+
+.hidden { display: none !important; }
+
+/* ── topo ──────────────────────────────────────────────── */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 15px 30px;
+  border-bottom: 1px solid var(--line);
+  background: var(--raised);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.brand-mark {
+  width: 25px; height: 25px;
+  fill: var(--accent);
+  stroke: var(--accent);
+  stroke-width: 1.1;
+  transition: fill .45s ease, stroke .45s ease;
+}
+
+.brand-name {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.015em;
+}
+
+/* Seletor de língua: cada pílula carrega o par de cores da bandeira
+   daquele país, então a escolha é reconhecível antes mesmo de ler. */
+.lang-pills { display: flex; gap: 7px; flex-wrap: wrap; }
+
+.lang-pill {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 15px 7px 11px;
+  border: 1.5px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--raised);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color .18s, color .18s, background .18s;
+}
+
+.lang-pill:hover { border-color: var(--ink-2); color: var(--ink); }
+.lang-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.lang-pill[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--pill-cor);
+  color: #fff;
+}
+
+/* chip bicolor no lugar da bandeira — emoji de bandeira não renderiza
+   no Windows, e um quadrado partido lê igual em qualquer sistema */
+.pill-chip {
+  width: 15px; height: 15px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--pill-cor) 0 50%, var(--pill-cor2) 50% 100%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.14);
+}
+
+.lang-pill[aria-pressed="true"] .pill-chip { box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); }
+
+.pill-nome { font-weight: 600; font-size: 14px; }
+.pill-pais { font-size: 13px; opacity: .75; }
+
+/* ── layout ────────────────────────────────────────────── */
+
+.page { max-width: 1140px; margin: 0 auto; padding: 46px 30px 70px; }
+
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-bottom: 34px;
+}
+
+.hero-text { max-width: 54ch; }
+
+.hero h1 {
+  font-family: var(--serif);
+  font-size: clamp(30px, 4.2vw, 46px);
+  line-height: 1.07;
+  font-weight: 600;
+}
+
+.hero p { color: var(--muted); margin: 13px 0 0; max-width: 52ch; }
+
+.btn-alfabeto {
+  background: var(--raised);
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  padding: 11px 24px;
+  border-radius: 999px;
+  transition: background .18s, color .18s;
+}
+
+.btn-alfabeto:hover { background: var(--accent); color: #fff; }
+.btn-alfabeto:disabled { opacity: .45; cursor: not-allowed; }
+
+/* letra escolhida para praticar */
+.alvo {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 20px;
+  padding: 8px 9px 8px 16px;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.alvo b { font-family: var(--serif); font-size: 19px; font-weight: 700; }
+
+.alvo-x {
+  border: 0;
+  background: rgba(0,0,0,.07);
+  color: inherit;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 17px;
+}
+
+.alvo-x:hover { background: rgba(0,0,0,.14); }
+.alvo-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+  gap: 26px;
+  align-items: start;
+}
+
+/* ── câmera ────────────────────────────────────────────── */
+
+.frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+}
+
+.frame video,
+.frame canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Só o vídeo espelha no CSS. O canvas já sai espelhado do camera.js
+   (ctx.scale(-1,1)); espelhar de novo aqui inverteria o desenho e o
+   polegar apareceria do lado errado da mão. */
+.frame video { transform: scaleX(-1); }
+.frame canvas { pointer-events: none; }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 34px;
+  text-align: center;
+  background: var(--sunken);
+}
+
+.overlay h2 { font-family: var(--serif); font-size: 22px; }
+.overlay p { color: var(--muted); max-width: 36ch; margin: 0; font-size: 14px; }
+
+.spinner {
+  width: 26px; height: 26px;
+  border: 2.5px solid var(--line-2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: girar .7s linear infinite;
+}
+
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.cue {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(252,252,253,.72);
+  font-family: var(--serif);
+  font-size: 86px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.cue.rec-on {
+  background: none;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  align-content: end;
+  padding-bottom: 22px;
+  text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+
+.hand-flag {
+  position: absolute;
+  left: 13px; bottom: 13px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(22,22,29,.82);
+  color: #fff;
+  font-size: 12.5px;
+}
+
+.stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 13px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.stage-bar-right { display: flex; gap: 8px; align-items: center; }
+
+.live { display: inline-flex; align-items: center; gap: 8px; }
+.live i {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--good);
+  box-shadow: 0 0 0 3px rgba(23,121,90,.15);
+}
+
+#cameraSelect {
+  border: 1px solid var(--line-2);
+  background: var(--raised);
+  border-radius: 9px;
+  padding: 6px 10px;
+  color: var(--ink);
+  font-size: 13px;
+  max-width: 190px;
+}
+
+/* ── botões ────────────────────────────────────────────── */
+
+.btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 20px;
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: background .18s, color .18s, border-color .18s;
+}
+
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { filter: brightness(1.14); }
+
+.btn-outline { background: none; border: 1.5px solid var(--line-2); color: var(--ink); }
+.btn-outline:hover { border-color: var(--ink); }
+
+.btn-quiet { background: none; color: var(--muted); padding: 6px 11px; font-weight: 500; }
+.btn-quiet:hover { color: var(--ink); }
+
+.btn-sm { font-size: 13px; }
+
+/* ── painel ────────────────────────────────────────────── */
+
+.panel { display: flex; flex-direction: column; gap: 24px; }
+
+.label { font-size: 13px; color: var(--faint); }
+
+.capture { display: flex; flex-direction: column; align-items: center; gap: 11px; }
+
+.rec {
+  position: relative;
+  width: 110px; height: 110px;
+  border: 0; padding: 0;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.rec:disabled { cursor: not-allowed; opacity: .38; }
+
+.rec-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.rec-track { fill: none; stroke: var(--line-2); stroke-width: 6; }
+.rec-progress {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 339.3;
+  stroke-dashoffset: 339.3;
+  transition: stroke-dashoffset .1s linear;
+}
+
+.rec-core {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: var(--accent);
+  transition: border-radius .22s, transform .22s, background .22s;
+}
+
+.rec:not(:disabled):hover .rec-core { transform: scale(1.07); }
+.rec.is-recording .rec-core { border-radius: 15px; transform: scale(.7); background: var(--bad); }
+.rec:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 50%; }
+
+.capture-hint { margin: 0; font-size: 13.5px; color: var(--muted); text-align: center; }
+
+/* O resultado é o momento principal da página: bloco tingido com a cor do
+   país, e a letra tratada como espécime tipográfico. */
+.readout {
+  border-radius: var(--r-lg);
+  padding: 20px 22px 22px;
+  background: var(--accent-wash);
+}
+
+.glyph {
+  font-family: var(--serif);
+  font-size: 96px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin: 2px 0 6px;
+  color: var(--accent);
+}
+
+.glyph.entrando { animation: surgir .28s cubic-bezier(.2,.8,.3,1); }
+
+@keyframes surgir {
+  from { opacity: 0; transform: translateY(6px) scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+
+.glyph.uncertain { color: var(--warn); font-size: 30px; letter-spacing: -0.01em; }
+.glyph.acerto { color: var(--good); }
+.glyph.erro { color: var(--bad); }
+
+.verdict { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+
+.hands-note { margin: 0 0 6px; font-size: 12.5px; color: var(--muted); }
+
+.ranking {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0,0,0,.09);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rank-row { display: grid; grid-template-columns: 24px 1fr 42px; align-items: center; gap: 11px; }
+.rank-row b { font-family: var(--serif); font-weight: 700; font-size: 15px; color: var(--ink); }
+.rank-row span { font-size: 12.5px; color: var(--muted); text-align: right; }
+.rank-bar { height: 5px; border-radius: 999px; background: rgba(0,0,0,.09); overflow: hidden; }
+.rank-bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.rank-row:not(:first-of-type) .rank-bar i { opacity: .4; }
+
+.log-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+
+.log-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+
+.log-list li {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.log-list li b { font-family: var(--serif); font-size: 17px; min-width: 17px; color: var(--ink); }
+.log-list li em { font-style: normal; margin-left: auto; color: var(--faint); font-size: 12.5px; }
+.log-empty { border-bottom: 0 !important; color: var(--faint) !important; }
+
+/* ── alfabeto (modal) ──────────────────────────────────── */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(22,22,29,.45);
+}
+
+.modal-card {
+  width: min(600px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--raised);
+  border-radius: var(--r-lg);
+  padding: 26px 28px 28px;
+  animation: subir .22s cubic-bezier(.2,.8,.3,1);
+}
+
+@keyframes subir {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.modal-head h2 { font-family: var(--serif); font-size: 25px; }
+
+.modal-x {
+  border: 0;
+  background: var(--sunken);
+  color: var(--muted);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.modal-x:hover { background: var(--line); color: var(--ink); }
+.modal-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.modal-sub { color: var(--muted); font-size: 14px; margin: 8px 0 20px; }
+.modal-sub strong { color: var(--ink); font-weight: 600; }
+
+.modal-dica { margin: 18px 0 0; font-size: 13px; color: var(--faint); }
+
+.letters { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 8px; }
+
+.letters button,
+.letters span {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r);
+  background: var(--raised);
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 2px;
+  text-align: center;
+  line-height: 1.05;
+}
+
+.letters button { cursor: pointer; transition: border-color .16s, background .16s, color .16s; }
+.letters button:hover { border-color: var(--accent); background: var(--accent-wash); color: var(--accent); }
+.letters button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.letters button.ativa { border-color: transparent; background: var(--accent); color: #fff; }
+
+/* letras que o modelo não reconhece: continuam visíveis, porque saber que
+   elas existem faz parte de entender o alfabeto */
+.letters span.off {
+  border-style: dashed;
+  color: var(--faint);
+  background: none;
+}
+
+/* ── diagnóstico ───────────────────────────────────────── */
+
+.diag { margin-top: 44px; font-size: 13.5px; }
+.diag summary { cursor: pointer; color: var(--muted); }
+.diag summary:hover { color: var(--ink); }
+.diag summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.diag ul { list-style: none; margin: 15px 0 0; padding: 0; max-width: 430px; }
+.diag li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+.diag-val { font-size: 13px; color: var(--ink); }
+.diag-val.ok { color: var(--good); }
+.diag-val.fail { color: var(--bad); }
+
+/* ── rodapé ────────────────────────────────────────────── */
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 22px 30px;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
+.footer a:hover { text-decoration: underline; }
+
+/* ── página de coleta e treino (treinar.html) ──────────────
+   Reaproveita os tokens acima. Os apelidos abaixo existem para o
+   treinador.css continuar funcionando com os nomes antigos. */
+
+:root {
+  --panel: var(--sunken);
+  --accent-soft: var(--accent-wash);
+  --display: var(--serif);
+  --mono: var(--sans);
+}
+
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+
+.brand-lang {
+  font-size: 13.5px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.brand-lang:hover { color: var(--ink); }
+
+.lang-switch { display: flex; align-items: center; gap: 9px; }
+
+.lang-switch label { font-size: 13px; color: var(--faint); }
+
+.lang-switch select {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  border: 1.5px solid var(--line-2);
+  border-radius: 999px;
+  padding: 7px 13px;
+  background: var(--raised);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.lang-switch select:hover { border-color: var(--accent); }
+.lang-switch select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.intro { max-width: 58ch; margin-bottom: 30px; }
+.intro h1 { font-family: var(--serif); font-size: clamp(28px, 4vw, 40px); line-height: 1.1; }
+.intro p { color: var(--muted); margin: 13px 0 0; }
+
+/* ── responsivo ────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .workspace { grid-template-columns: 1fr; }
+  .page { padding: 32px 20px 54px; }
+  .topbar, .footer { padding-inline: 20px; }
+  .hero { align-items: flex-start; }
+  .glyph { font-size: 78px; }
+}
+
+@media (max-width: 520px) {
+  .pill-pais { display: none; }
+  .lang-pills { width: 100%; }
+  .lang-pill { flex: 1; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
