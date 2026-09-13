@@ -60,8 +60,8 @@ IDIOMAS = {
     "sibi": {
         "nome": "SIBI",
         "pais": "Indonésia",
-        "cor": "#CE1126",
-        "cor2": "#FFFFFF",
+        "cor": "#F4F7FA",
+        "cor2": "#FF5C5C",
         # Alfabeto A-Z padrão, uma mão só (o SIBI foi historicamente
         # adaptado a partir do alfabeto manual americano). Confirmado no
         # quadro do próprio dataset: J tem gancho e Z tem o traço em

@@ -3,13 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SinaLibras — alfabeto manual em Libras, ASL e LSE</title>
+<title>SinaLingua — alfabeto manual em Libras, ASL, LSE e SIBI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
+<div class="aurora" aria-hidden="true"><i></i></div>
+
 
 <header class="topbar">
   <a class="brand" href="index.html">
@@ -18,7 +21,7 @@
       <circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/>
       <path d="M12 4 5 10M12 4l7 6M5 10l3 8M19 10l-3 8M8 18h8"/>
     </svg>
-    <span class="brand-name">SinaLibras</span>
+    <span class="brand-name"><em>Sina</em>Lingua</span>
   </a>
 
   <nav class="lang-pills" id="langPills" aria-label="Língua de sinais"></nav>
@@ -28,8 +31,7 @@
 
   <section class="hero">
     <div class="hero-text">
-      <h1 id="heroTitle">Faça um sinal. Descubra a letra.</h1>
-      <p id="heroSub">A câmera lê os pontos da sua mão e o modelo diz qual letra do alfabeto manual você formou.</p>
+      <h1 id="heroTitle">Faça um sinal.<br>O sistema <em>entende</em>.</h1>
     </div>
     <button class="btn btn-alfabeto" id="btnAlfabeto">Alfabeto</button>
   </section>
@@ -49,6 +51,13 @@
         <canvas id="canvas"></canvas>
 
         <div class="overlay" id="overlayIdle">
+          <svg class="overlay-hand" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 21 12 13M12 13 7 9M12 13l5-4M7 9 5 4M17 9l2-5M12 13v-6"/>
+            <circle cx="12" cy="21" r="1.7"/><circle cx="12" cy="13" r="1.7"/>
+            <circle cx="7" cy="9" r="1.5"/><circle cx="17" cy="9" r="1.5"/>
+            <circle cx="5" cy="4" r="1.3"/><circle cx="19" cy="4" r="1.3"/>
+            <circle cx="12" cy="7" r="1.3"/>
+          </svg>
           <h2>A câmera está desligada</h2>
           <p>O vídeo é processado no seu aparelho. Nenhuma imagem sai daqui.</p>
           <button class="btn btn-primary" id="btnRequest">Ligar a câmera</button>
@@ -128,20 +137,59 @@
 </main>
 
 <footer class="footer">
-  <span>SinaLibras · projeto acadêmico FECAP</span>
-  <a href="treinar.html">Coletar e treinar</a>
+  <span>SinaLingua · projeto acadêmico FECAP</span>
 </footer>
 
 <!-- ── Alfabeto ───────────────────────────────────────────── -->
 <div class="modal hidden" id="modalAlfabeto" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
   <div class="modal-card">
-    <div class="modal-head">
-      <h2 id="modalTitulo">Alfabeto</h2>
-      <button class="modal-x" id="btnFecharAlfabeto" aria-label="Fechar">×</button>
+
+    <!-- nível 1: a grade com todas as letras -->
+    <div id="viewGrade">
+      <div class="modal-head">
+        <h2 id="modalTitulo">Alfabeto</h2>
+        <button class="modal-x" id="btnFecharAlfabeto" aria-label="Fechar">×</button>
+      </div>
+      <p class="modal-sub" id="scopeText"></p>
+      <div class="letters" id="letterGrid"></div>
+      <p class="modal-dica">Toque numa letra para ver como fazer o sinal.</p>
+      <button class="btn btn-outline btn-quadro" id="btnQuadroCompleto">
+        alfabeto completo <span aria-hidden="true">→</span>
+      </button>
     </div>
-    <p class="modal-sub" id="scopeText"></p>
-    <div class="letters" id="letterGrid"></div>
-    <p class="modal-dica">Toque numa letra disponível para praticar ela.</p>
+
+    <!-- nível extra: o pôster com o alfabeto inteiro, numa imagem só -->
+    <div id="viewQuadro" class="hidden">
+      <div class="modal-head">
+        <button class="modal-voltar" id="btnVoltarDoQuadro">
+          <span aria-hidden="true">←</span> Alfabeto
+        </button>
+        <button class="modal-x" id="btnFecharQuadro" aria-label="Fechar">×</button>
+      </div>
+      <p class="modal-sub" id="quadroLegenda"></p>
+      <div class="quadro-figura" id="quadroFigura"></div>
+    </div>
+
+    <!-- nível 2: a letra escolhida, com a imagem de como fazer -->
+    <div id="viewLetra" class="hidden">
+      <div class="modal-head">
+        <button class="modal-voltar" id="btnVoltarGrade">
+          <span aria-hidden="true">←</span> Alfabeto
+        </button>
+        <button class="modal-x" id="btnFecharLetra" aria-label="Fechar">×</button>
+      </div>
+
+      <div class="letra-detalhe">
+        <div class="letra-figura" id="letraFigura"></div>
+        <div class="letra-info">
+          <span class="letra-grande" id="letraGrande">A</span>
+          <p class="letra-idioma" id="letraIdioma"></p>
+          <p class="letra-nota" id="letraNota"></p>
+          <button class="btn btn-primary" id="btnPraticarLetra">Praticar esta letra</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 

@@ -13,9 +13,15 @@
 
   const PREPARO_MS = 1800;    // contagem antes de valer
   const CAPTURA_MS = 1600;    // janela em que os quadros contam
-  const CONF_MIN = 0.55;      // abaixo disso a leitura é declarada incerta
-  const MARGEM_MIN = 0.12;    // distância mínima entre 1º e 2º lugar
-  const QUADROS_MIN = 12;     // amostras mínimas para aceitar a gravação
+  // Limiares de aceitação da leitura. Foram afrouxados depois dos testes com
+  // o grupo: letras como G (ASL) e O (SIBI) ficavam "sem leitura" porque
+  // passavam raspando. Numa demonstração, mostrar a melhor aposta com uma
+  // ressalva é mais útil que recusar a responder — a recusa total fica só
+  // para quando o modelo realmente não tem opinião.
+  const CONF_MIN = 0.35;      // abaixo disso a leitura é declarada incerta
+  const MARGEM_MIN = 0.05;    // distância mínima entre 1º e 2º lugar
+  const CONF_FRACA = 0.60;    // entre CONF_MIN e isto, mostra mas avisa
+  const QUADROS_MIN = 8;      // amostras mínimas para aceitar a gravação
 
   const $ = (id) => document.getElementById(id);
 
@@ -53,6 +59,16 @@
   const modalAlfabeto = $("modalAlfabeto");
   const btnAlfabeto = $("btnAlfabeto");
   const btnFecharAlfabeto = $("btnFecharAlfabeto");
+  const btnFecharLetra = $("btnFecharLetra");
+  const btnVoltarGrade = $("btnVoltarGrade");
+  const btnPraticarLetra = $("btnPraticarLetra");
+  const viewGrade = $("viewGrade");
+  const viewLetra = $("viewLetra");
+  const viewQuadro = $("viewQuadro");
+  const btnQuadroCompleto = $("btnQuadroCompleto");
+  const btnVoltarDoQuadro = $("btnVoltarDoQuadro");
+  const btnFecharQuadro = $("btnFecharQuadro");
+  let letraAberta = null;
   const alvoChip = $("alvoChip");
   const alvoLetra = $("alvoLetra");
   const btnLimparAlvo = $("btnLimparAlvo");
@@ -93,9 +109,12 @@
     recProgress.style.strokeDashoffset = String(DASH * (1 - fracao));
   }
 
-  /** Monta o alfabeto: letras reconhecidas viram botões de prática, as
-   * feitas com movimento aparecem marcadas mas não clicáveis. Idiomas sem
-   * alfabeto declarado (alfabeto: null) mostram só as classes do modelo. */
+  /**
+   * Nível 1 do alfabeto: a grade. TODAS as letras são clicáveis, inclusive
+   * as feitas com movimento — elas continuam fazendo parte do alfabeto e
+   * mostrar como são é conteúdo útil, mesmo que o modelo não as reconheça.
+   * A diferença é que só as estáticas podem virar alvo de prática.
+   */
   function montarGradeLetras() {
     const grid = $("letterGrid");
     if (!grid || !SignModel.isReady()) return;
@@ -104,22 +123,17 @@
     const todas = Idiomas.letras(idioma) || SignModel.labels();
 
     grid.innerHTML = "";
-    for (const letra of todas) {
-      if (validas.has(letra)) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = letra;
-        btn.classList.toggle("ativa", alvo === letra);
-        btn.onclick = () => definirAlvo(alvo === letra ? null : letra);
-        grid.appendChild(btn);
-      } else {
-        const el = document.createElement("span");
-        el.className = "off";
-        el.textContent = letra;
-        el.title = "Feita com movimento — não dá para reconhecer numa pose só";
-        grid.appendChild(el);
-      }
-    }
+    todas.forEach((letra, i) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = letra;
+      btn.className = validas.has(letra) ? "" : "off";
+      btn.classList.toggle("ativa", alvo === letra);
+      // entrada em cascata: as letras aparecem em sequência, não de uma vez
+      btn.style.setProperty("--atraso", `${Math.min(i * 16, 420)}ms`);
+      btn.onclick = () => abrirLetra(letra);
+      grid.appendChild(btn);
+    });
 
     const modalTitulo = $("modalTitulo");
     if (modalTitulo) modalTitulo.textContent = `Alfabeto em ${Idiomas.nome(idioma)}`;
@@ -127,16 +141,125 @@
     const texto = $("scopeText");
     if (texto) {
       const fora = SignModel.excluded();
-      let html = `O modelo reconhece <strong>${validas.size} letras</strong> ` +
-                 `do alfabeto manual de ${Idiomas.nome(idioma)}.`;
+      let html = `A câmera reconhece <strong>${validas.size} letras</strong> ` +
+                 `deste alfabeto.`;
       if (fora.length) {
         const plural = fora.length > 1;
-        html += ` <strong>${fora.join(", ")}</strong> ${plural ? "ficam" : "fica"} de fora: ` +
-                `${plural ? "são feitas" : "é feita"} com movimento, e um movimento ` +
-                `não cabe numa pose só.`;
+        html += ` <strong>${fora.join(", ")}</strong> ${plural ? "aparecem" : "aparece"} ` +
+                `só como referência: ${plural ? "são feitas" : "é feita"} com movimento, ` +
+                `e um movimento não cabe numa pose só.`;
       }
       texto.innerHTML = html;
     }
+  }
+
+  /** Nível 2: a letra escolhida, com a imagem de como fazer o sinal. */
+  function abrirLetra(letra) {
+    const idioma = SignModel.idioma();
+    const reconhecida = SignModel.labels().includes(letra);
+    letraAberta = letra;
+
+    $("letraGrande").textContent = letra;
+    $("letraIdioma").textContent = `${Idiomas.nome(idioma)} · ${Idiomas.pais(idioma)}`;
+
+    $("letraNota").textContent = reconhecida
+      ? "A câmera reconhece esta letra. Faça o sinal e grave para testar."
+      : "Esta letra é feita com movimento, então a câmera não consegue " +
+        "reconhecê-la a partir de uma pose só.";
+
+    btnPraticarLetra.classList.toggle("hidden", !reconhecida);
+
+    montarFigura(idioma, letra);
+
+    viewGrade.classList.add("hidden");
+    viewLetra.classList.remove("hidden");
+    viewLetra.classList.remove("entrando");
+    void viewLetra.offsetWidth;   // reinicia a animação
+    viewLetra.classList.add("entrando");
+    btnVoltarGrade.focus();
+  }
+
+  /**
+   * Carrega img/alfabeto/<idioma>/<LETRA>.png. Se o arquivo ainda não
+   * existir, mostra um espaço reservado explicando o que falta — o site
+   * funciona igual, só sem a ilustração daquela letra.
+   */
+  function montarFigura(idioma, letra) {
+    const figura = $("letraFigura");
+    figura.innerHTML = "";
+    figura.classList.add("carregando");
+
+    const img = new Image();
+    img.alt = `Como fazer a letra ${letra} em ${Idiomas.nome(idioma)}`;
+
+    img.onload = () => {
+      figura.classList.remove("carregando");
+      figura.innerHTML = "";
+      figura.appendChild(img);
+    };
+
+    img.onerror = () => {
+      figura.classList.remove("carregando");
+      figura.innerHTML =
+        `<div class="figura-vazia">` +
+        `<span>${letra}</span>` +
+        `<p>Imagem ainda não adicionada</p>` +
+        `<code>img/alfabeto/${idioma}/${letra}.png</code>` +
+        `</div>`;
+    };
+
+    img.src = Idiomas.caminhoImagem(idioma, letra);
+  }
+
+  /** Tela extra: o pôster com o alfabeto inteiro numa imagem só, em vez de
+   * letra por letra. Mesma lógica de carregamento/espaço reservado da
+   * figura de uma letra, só que uma imagem por idioma inteiro. */
+  function abrirQuadroCompleto() {
+    const idioma = SignModel.idioma();
+    $("quadroLegenda").innerHTML =
+      `Alfabeto completo de <strong>${Idiomas.nome(idioma)}</strong> — ${Idiomas.pais(idioma)}.`;
+
+    const figura = $("quadroFigura");
+    figura.innerHTML = "";
+    figura.classList.add("carregando");
+
+    const img = new Image();
+    img.alt = `Alfabeto completo de ${Idiomas.nome(idioma)}`;
+    img.onload = () => {
+      figura.classList.remove("carregando");
+      figura.innerHTML = "";
+      figura.appendChild(img);
+    };
+    img.onerror = () => {
+      figura.classList.remove("carregando");
+      figura.innerHTML =
+        `<div class="figura-vazia">` +
+        `<span>${Idiomas.nome(idioma)}</span>` +
+        `<p>Imagem do quadro completo ainda não adicionada</p>` +
+        `<code>img/alfabeto/${idioma}/completo.png</code>` +
+        `</div>`;
+    };
+    img.src = Idiomas.caminhoImagemCompleta(idioma);
+
+    viewGrade.classList.add("hidden");
+    viewQuadro.classList.remove("hidden");
+    viewQuadro.classList.remove("entrando");
+    void viewQuadro.offsetWidth;
+    viewQuadro.classList.add("entrando");
+    btnVoltarDoQuadro.focus();
+  }
+
+  function voltarDoQuadro() {
+    viewQuadro.classList.add("hidden");
+    viewGrade.classList.remove("hidden");
+    btnQuadroCompleto.focus();
+  }
+
+  function voltarParaGrade() {
+    viewLetra.classList.add("hidden");
+    viewGrade.classList.remove("hidden");
+    letraAberta = null;
+    btnFecharAlfabeto.focus();
   }
 
   function definirAlvo(letra) {
@@ -154,6 +277,10 @@
   function abrirAlfabeto() {
     if (!SignModel.isReady()) return;
     montarGradeLetras();
+    viewLetra.classList.add("hidden");
+    viewQuadro.classList.add("hidden");
+    viewGrade.classList.remove("hidden");
+    letraAberta = null;
     modalAlfabeto.classList.remove("hidden");
     btnFecharAlfabeto.focus();
   }
@@ -179,6 +306,100 @@
     return `rgb(${r}, ${g}, ${b})`;
   }
 
+  // ── efeitos visuais ─────────────────────────────────────
+
+  const semMovimento = () =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /** Onda a partir do ponto exato onde a pessoa clicou. */
+  function ondaDeClique(e) {
+    const btn = e.currentTarget;
+    if (semMovimento()) return;
+    const r = btn.getBoundingClientRect();
+    const tamanho = Math.max(r.width, r.height);
+    const onda = document.createElement("span");
+    onda.className = "onda";
+    onda.style.width = onda.style.height = `${tamanho}px`;
+    onda.style.left = `${e.clientX - r.left - tamanho / 2}px`;
+    onda.style.top = `${e.clientY - r.top - tamanho / 2}px`;
+    btn.appendChild(onda);
+    setTimeout(() => onda.remove(), 620);
+  }
+
+  /** Faíscas de acerto — só quando a letra praticada é a certa. */
+  function estourarFaiscas() {
+    if (semMovimento()) return;
+    const caixa = $("resultLetter");
+    if (!caixa) return;
+    const r = caixa.getBoundingClientRect();
+    const pai = caixa.closest(".readout");
+    const rp = pai.getBoundingClientRect();
+    const x = r.left - rp.left + r.width * 0.3;
+    const y = r.top - rp.top + r.height * 0.5;
+
+    for (let i = 0; i < 18; i++) {
+      const f = document.createElement("i");
+      f.className = "faisca";
+      const ang = (Math.PI * 2 * i) / 18 + Math.random() * 0.4;
+      const dist = 60 + Math.random() * 80;
+      f.style.left = `${x}px`;
+      f.style.top = `${y}px`;
+      f.style.setProperty("--dx", `${Math.cos(ang) * dist}px`);
+      f.style.setProperty("--dy", `${Math.sin(ang) * dist}px`);
+      f.style.animationDelay = `${Math.random() * 90}ms`;
+      pai.appendChild(f);
+      setTimeout(() => f.remove(), 900);
+    }
+  }
+
+  /** Clarão no painel quando uma letra é reconhecida. */
+  function clarao() {
+    if (semMovimento()) return;
+    const painel = document.querySelector(".readout");
+    if (!painel) return;
+    painel.classList.remove("clarao");
+    void painel.offsetWidth;
+    painel.classList.add("clarao");
+    setTimeout(() => painel.classList.remove("clarao"), 640);
+  }
+
+  /** Números da faixa de dados contam até o valor, em vez de só aparecer. */
+  function contarAte(el, alvoTexto) {
+    if (!el) return;
+    const numero = parseFloat(String(alvoTexto).replace(",", "."));
+    if (semMovimento() || Number.isNaN(numero)) {
+      el.textContent = alvoTexto;
+      return;
+    }
+    const temPercent = String(alvoTexto).includes("%");
+    const casas = String(alvoTexto).includes(",") ? 1 : 0;
+    const inicio = performance.now();
+    const duracao = 700;
+
+    (function passo(agora) {
+      const p = Math.min((agora - inicio) / duracao, 1);
+      const suave = 1 - Math.pow(1 - p, 3);
+      const v = (numero * suave).toFixed(casas).replace(".", ",");
+      el.textContent = temPercent ? `${v}%` : v;
+      if (p < 1) requestAnimationFrame(passo);
+      else el.textContent = alvoTexto;
+    })(inicio);
+  }
+
+  /** O quadro da câmera inclina de leve seguindo o mouse. */
+  function ligarInclinacao() {
+    const frame = $("frame");
+    if (!frame || semMovimento()) return;
+    frame.addEventListener("mousemove", (e) => {
+      const r = frame.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      frame.style.transform =
+        `perspective(1100px) rotateY(${px * 3.2}deg) rotateX(${-py * 3.2}deg)`;
+    });
+    frame.addEventListener("mouseleave", () => { frame.style.transform = ""; });
+  }
+
   function montarPilulas() {
     if (!langPills) return;
     langPills.innerHTML = "";
@@ -197,6 +418,10 @@
         `<span class="pill-pais">${Idiomas.pais(id)}</span>`;
       btn.onclick = () => {
         if (btn.getAttribute("aria-pressed") === "true") return;
+        btn.classList.remove("escolhida");
+        void btn.offsetWidth;
+        btn.classList.add("escolhida");
+        setTimeout(() => btn.classList.remove("escolhida"), 640);
         trocarIdioma(id);
       };
       langPills.appendChild(btn);
@@ -228,6 +453,9 @@
     historico = [];
     desenharHistorico();
 
+    contarAte($("statIdiomas"), String(Idiomas.lista().length));
+    contarAte($("statAcuracia"), Idiomas.acuracia(id) || "—");
+
     const sub = $("heroSub");
     if (sub) {
       sub.textContent =
@@ -242,6 +470,8 @@
     montarGradeLetras();
 
     if (btnAlfabeto) btnAlfabeto.disabled = !ok;
+
+    contarAte($("statLetras"), ok ? String(SignModel.labels().length) : "—");
 
     if (ok) {
       resultVerdict.textContent = "Nenhuma gravação ainda.";
@@ -283,6 +513,7 @@
       setProgresso(0);
       if (decorrido >= PREPARO_MS) {
         modoGravacao = "capturando";
+        document.body.classList.add("gravando");
         inicioFase = performance.now();
         cue.classList.add("rec-on");
         cueText.textContent = "gravando — segure o gesto";
@@ -297,6 +528,7 @@
 
   function encerrarGravacao() {
     modoGravacao = "parado";
+    document.body.classList.remove("gravando");
     btnRecord.classList.remove("is-recording");
     cue.classList.add("hidden");
     cue.classList.remove("rec-on");
@@ -336,6 +568,7 @@
 
     const lida = principal.ordem[0].letra;
     const confianca = (principal.ordem[0].p * 100).toFixed(0);
+    const fraca = principal.ordem[0].p < CONF_FRACA || principal.margem < 0.12;
 
     resultLetter.className = "glyph entrando";
     resultLetter.textContent = lida;
@@ -344,13 +577,22 @@
       ? `pela mão ${NOME_MAO[principal.lado] || principal.lado}`
       : `pela média de ${principal.quadros} quadros`;
 
+    clarao();
+
     if (alvo) {
       // com uma letra escolhida para praticar, o retorno é acertou ou não
       const acertou = lida === alvo;
       resultLetter.classList.add(acertou ? "acerto" : "erro");
+      if (acertou) estourarFaiscas();
       resultVerdict.textContent = acertou
         ? `É o ${alvo}. ${confianca}% de confiança ${maoTxt}.`
         : `Você fez ${lida}, o alvo era ${alvo}. Tente de novo.`;
+    } else if (fraca) {
+      // passou do piso, mas por pouco: mostra a aposta e avisa que é incerta
+      resultLetter.classList.add("duvida");
+      resultVerdict.textContent =
+        `Provavelmente ${lida}, mas com pouca certeza (${confianca}%). ` +
+        `${principal.ordem[1].letra} ficou perto.`;
     } else {
       resultVerdict.textContent = `${confianca}% de confiança ${maoTxt}.`;
     }
@@ -460,11 +702,15 @@
   }
 
   function desenharMao(lm) {
+    // turquesa (#40E0D0): a mesma cor da comunidade surda que estrutura a
+    // interface inteira — o esqueleto da mão é o elemento mais visível do
+    // projeto, então é onde ela mais aparece
+    const TURQ = "#40e0d0";
     if (typeof drawConnectors !== "undefined" && typeof HAND_CONNECTIONS !== "undefined") {
-      drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: "#3a2be0", lineWidth: 3 });
-      window.drawLandmarks(ctx, lm, { color: "#ffffff", fillColor: "#3a2be0", lineWidth: 2, radius: 4 });
+      drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: TURQ, lineWidth: 3 });
+      window.drawLandmarks(ctx, lm, { color: "#ffffff", fillColor: TURQ, lineWidth: 1.5, radius: 4 });
     } else {
-      ctx.fillStyle = "#3a2be0";
+      ctx.fillStyle = TURQ;
       for (const p of lm) {
         ctx.beginPath();
         ctx.arc(p.x * canvas.width, p.y * canvas.height, 4, 0, Math.PI * 2);
@@ -536,6 +782,7 @@
       updatePermissionDiag("granted");
 
       showOverlay("none");
+      document.body.classList.add("camera-on");
       stageBar.classList.remove("hidden");
       btnRecord.disabled = !SignModel.isReady();
       recordHint.textContent = SignModel.isReady()
@@ -558,6 +805,7 @@
       currentStream = null;
     }
     video.srcObject = null;
+    document.body.classList.remove("camera-on");
     modoGravacao = "parado";
     btnRecord.disabled = true;
     btnRecord.classList.remove("is-recording");
@@ -657,7 +905,16 @@
 
   btnAlfabeto.addEventListener("click", abrirAlfabeto);
   btnFecharAlfabeto.addEventListener("click", fecharAlfabeto);
+  btnFecharLetra.addEventListener("click", fecharAlfabeto);
+  btnVoltarGrade.addEventListener("click", voltarParaGrade);
+  btnQuadroCompleto.addEventListener("click", abrirQuadroCompleto);
+  btnVoltarDoQuadro.addEventListener("click", voltarDoQuadro);
+  btnFecharQuadro.addEventListener("click", fecharAlfabeto);
   btnLimparAlvo.addEventListener("click", () => definirAlvo(null));
+
+  btnPraticarLetra.addEventListener("click", () => {
+    if (letraAberta) definirAlvo(letraAberta);
+  });
 
   // clicar no fundo escuro fecha o alfabeto
   modalAlfabeto.addEventListener("click", (e) => {
@@ -666,7 +923,11 @@
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !modalAlfabeto.classList.contains("hidden")) {
-      fecharAlfabeto();
+      // dentro de uma letra ou do quadro completo, Esc volta para a grade
+      // em vez de fechar tudo
+      if (!viewLetra.classList.contains("hidden")) voltarParaGrade();
+      else if (!viewQuadro.classList.contains("hidden")) voltarDoQuadro();
+      else fecharAlfabeto();
       return;
     }
     if (e.code === "Space" && e.target === document.body) {
@@ -688,6 +949,10 @@
     setProgresso(0);
 
     montarPilulas();
+    ligarInclinacao();
+    for (const b of document.querySelectorAll(".btn")) {
+      b.addEventListener("click", ondaDeClique);
+    }
     trocarIdioma(Idiomas.PADRAO);
   })();
 })();

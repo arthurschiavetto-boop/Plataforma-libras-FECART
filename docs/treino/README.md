@@ -1,116 +1,133 @@
-# Treino do classificador — passo a passo
+# Treino do modelo — guia completo
 
-Esta pasta tem os dois scripts Python que transformam suas **imagens** num
-**modelo** que o site usa. Rode na sua máquina (não no navegador).
+Esta pasta contém tudo que transforma **imagens organizadas por letra** num
+**modelo treinado** que o site carrega. Roda no seu computador, não no
+navegador.
 
 ## Pré-requisitos
 
 ```bash
-pip install mediapipe opencv-python numpy scikit-learn
+pip install mediapipe==0.10.14 opencv-python numpy scikit-learn
 ```
 
-## Passo 1 — Extrair os landmarks das imagens
+O MediaPipe precisa dessa versão (ou próxima) — versões muito novas mudaram
+a API interna que os scripts usam. Se o Python instalado for 3.13+ e a
+instalação falhar, use o Python 3.12.
 
-Seu dataset são fotos organizadas em pastas por letra (`dataset/A/`, `dataset/B/`...).
-Este script roda o MediaPipe sobre cada foto e gera os 63 números de cada uma.
-
-```bash
-python extrair_landmarks.py --entrada dataset --saida dataset_landmarks.json
-```
-
-Ao final ele mostra quantas imagens viraram amostras e quantas foram puladas
-(quando o MediaPipe não acha a mão na foto — é normal acontecer com algumas).
-
-## Passo 2 — Treinar e exportar o modelo
-
-```bash
-python treinar.py --entrada dataset_landmarks.json --saida ../js/modelo.json
-```
-
-Isso treina a rede, mostra a acurácia por letra e salva o `modelo.json`
-direto na pasta `js/` do site.
-
-## Passo 3 — Usar no site
-
-Não precisa fazer nada além de gerar o `modelo.json`. Quando o site abre, ele
-tenta carregar esse arquivo automaticamente:
-
-- **Se o `modelo.json` existe** → usa o modelo treinado (todas as letras do dataset).
-- **Se não existe** → o botão de gravação fica desativado e o diagnóstico avisa.
-
-O painel de diagnóstico mostra qual está ativo.
-
-## Por que as imagens precisam virar landmarks?
-
-O site não reconhece a partir da foto — ele reconhece a partir dos 63 números
-que o MediaPipe extrai. A normalização (em relação ao pulso) é **idêntica** nos
-três lugares: `extrair_landmarks.py`, `collector.js` e `modelo.js`. Se você mudar
-a conta num lugar, mude nos três, senão o modelo treinado não bate com o que o
-site envia em tempo real.
-
-## Sobre as letras com movimento (H, J, K, X, Z)
-
-Essas letras têm trajetória, e uma foto isolada não captura isso. O modelo vai
-aprender a "pose" delas, mas pode confundir, porque a informação do movimento
-não está numa foto só. Para reconhecê-las bem, e para chegar em palavras de
-verdade, o caminho é trabalhar com **sequências de frames** — veja o
-`GUIA_TREINO.md` na raiz do projeto.
-
-
----
-
-## Fluxo atual (features v2)
-
-O dataset guarda os **landmarks crus**, não as features. As features são
-calculadas em `treino/features.py` (treino) e em `js/features.js` (site) — os
-dois arquivos precisam produzir exatamente os mesmos números.
+## O fluxo, em duas etapas
 
 ```
-python extrair_landmarks.py --entrada dataset --saida dataset.json   # se tiver fotos
-#   ou colete pelo coletor.html e baixe o JSON
-
-python treinar.py --entrada dataset.json --saida ../js/modelo.json
+imagens (pastas por letra) → extrair_landmarks.py → dataset-<idioma>.json → treinar.py → modelo
 ```
 
-O `treinar.py` imprime os pares mais confundidos ao final — é a lista do que
-recoletar primeiro.
-
-H, J, K, X e Z são puladas automaticamente: são feitas com movimento e não têm
-pose única.
-
-
----
-
-## Vários idiomas
-
-Os idiomas ficam em `treino/idiomas.py` (gêmeo de `js/idiomas.js`). Cada um
-declara as letras feitas com movimento, que não entram no treino:
-
-| Idioma | Excluídas | Letras reconhecidas |
-|--------|-----------|---------------------|
-| libras | H, J, K, X, Z | 21 |
-| asl    | J, Z          | 24 |
-
-Estrutura de pastas esperada, uma por idioma:
+**1. Organize o dataset.** Uma pasta por idioma, com uma subpasta por letra
+dentro. Aceita tanto letras direto na raiz quanto uma divisão `train`/`test`
+— o script detecta sozinho:
 
 ```
 treino/
-  dataset-libras/train/A/ ... test/A/ ...
-  dataset-asl/train/A/ ... test/A/ ...
+  dataset-libras/train/A/ ...  test/A/ ...
+  dataset-asl/A/ B/ ...
 ```
 
-Fluxo por idioma:
+**2. Extraia os landmarks:**
 
-```
+```bash
 python extrair_landmarks.py --idioma asl
+```
+
+Isso roda o MediaPipe em cada imagem e salva os **pontos crus da mão** (não
+as características já calculadas) em `dataset-asl.json`. Guardar cru é o
+que permite melhorar a fórmula das features depois sem precisar reprocessar
+as imagens de novo. No final, o script mostra quantas imagens viraram
+amostra e quantas foram descartadas por não ter mão detectada — é normal
+perder algumas, mas se a taxa de perda for muito alta (mais de ~30%), vale
+desconfiar da qualidade das imagens do dataset.
+
+**3. Treine e exporte:**
+
+```bash
 python treinar.py --idioma asl
 ```
 
-Sem `--entrada`/`--saida` ele usa `dataset-<idioma>/`, gera
-`dataset-<idioma>.json` e escreve o modelo em `../models/<idioma>/alfabeto.json`
-(exceto libras, que por padrão continua escrevendo em `../js/modelo.json`,
-para não quebrar o modelo já publicado).
+Isso calcula as features a partir dos landmarks crus, treina a rede e
+imprime a acurácia e os pares de letras mais confundidos entre si — é a
+lista do que recoletar primeiro, se quiser melhorar o modelo. O resultado
+vai para `../models/asl/alfabeto.json` (exceto Libras, que por
+compatibilidade com o modelo já publicado escreve em `../js/modelo.json`).
 
-Para acrescentar um terceiro idioma: adicionar a entrada em `idiomas.py` **e**
-em `js/idiomas.js` (as duas precisam bater), montar a pasta do dataset e
-rodar os mesmos dois comandos. Nenhum outro código muda.
+## As features: o coração do sistema
+
+Cada mão vira **109 números**: coordenadas normalizadas, distância entre as
+pontas dos dedos, ângulo de cada articulação, distância do polegar a cada
+junta, e orientação da palma. Essa conta existe em dois lugares que
+**precisam ser idênticos**:
+
+- `features.py` (usado aqui, no treino)
+- `../js/features.js` (usado no site, em tempo real)
+
+Se você alterar a fórmula num lado sem replicar no outro, o modelo treina
+normalmente mas erra tudo no site, porque está recebendo números calculados
+de um jeito diferente do que aprendeu. Sempre que mexer em qualquer um dos
+dois, rode:
+
+```bash
+python testar_paridade.py
+```
+
+Ele gera casos de teste e confere se as duas linguagens produzem os mesmos
+números, byte a byte. Precisa do Node.js instalado.
+
+## Idiomas: `idiomas.py`
+
+Cada língua é uma entrada em `idiomas.py` (e no gêmeo `../js/idiomas.js`),
+com três informações centrais:
+
+- **`alfabeto`** — a lista completa de classes daquela língua, ou `None`
+  quando ainda não sabemos como as pastas do dataset são nomeadas (nesse
+  modo, o treino aceita qualquer classe que encontrar, sem exigir uma lista
+  prevista).
+- **`excluidas`** — as letras feitas com **movimento**, que não entram no
+  treino porque uma pose única não capta uma trajetória. Cada exclusão
+  neste projeto está documentada com a fonte que a justifica (ver comentários
+  no arquivo) — nenhuma foi um palpite sem verificação.
+- **`pais`, `cor`, `cor2`** — usados só pela interface, para pintar a
+  página com a cor da bandeira daquele país quando a língua é escolhida.
+
+### Tabela atual
+
+| Idioma | Excluídas | Letras reconhecidas |
+|---|---|---|
+| libras | H, J, K, X, Z | 21 |
+| asl | J, Z | 24 |
+| spanish (LSE) | H, CH, J, LL, Ñ, RR, V, W, X, Y, Z | 19 |
+| sibi | J, Z | 24 |
+
+### Adicionar uma língua nova
+
+1. Adiciona a entrada em `idiomas.py` **e** em `js/idiomas.js` — as duas
+   listas de exclusão precisam bater exatamente.
+2. Monta a pasta `dataset-<idioma>/`.
+3. Roda os dois comandos (`extrair_landmarks.py` e `treinar.py`) com
+   `--idioma <idioma>`.
+
+Nenhum outro arquivo do projeto precisa mudar — o site descobre a língua
+nova automaticamente a partir de `idiomas.js`.
+
+## Ferramentas de apoio
+
+- **`diagnostico_dataset.py`** — mostra a árvore de pastas de um dataset,
+  útil pra confirmar a estrutura antes de rodar a extração de verdade.
+- **`testar_paridade.py`** — já descrito acima.
+
+## Erros comuns
+
+**"pasta não encontrada: dataset-X"** — o nome da pasta não bate com
+`dataset-<idioma>`, ou você não está rodando o comando de dentro de
+`treino/`.
+
+**Nomes de pasta corrompidos após extrair um `.zip`** (tipo `╨¢` em vez de
+uma letra) — é um problema de codificação de caracteres no próprio arquivo
+zip, comum em datasets com alfabetos não-latinos. A causa mais frequente é
+o zip ter os nomes em UTF-8 sem a flag que avisa isso, e ferramentas de
+extração assumirem uma codificação antiga por padrão.

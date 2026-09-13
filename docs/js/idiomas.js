@@ -5,8 +5,13 @@
  * Os dois precisam listar exatamente os mesmos campos por idioma. Se
  * divergirem, o site vai mascarar letras diferentes das que o treino ignorou.
  *
- * "cor" e "cor2" vêm da bandeira do país que fala a língua — são elas que
- * pintam a interface quando o idioma é trocado.
+ * "cor" e "cor2" vêm da bandeira do país que fala a língua, CLAREADAS para
+ * o fundo escuro da interface (as cores oficiais, tipo o verde #009739 do
+ * Brasil, somem contra o escuro). São elas que pintam a interface quando o
+ * idioma é trocado — enquanto o turquesa #40E0D0, cor da comunidade surda,
+ * é a constante que aparece em todas as telas, independente da língua.
+ *
+ * "acuracia" é o resultado do treino daquele modelo, mostrado na interface.
  *
  * "alfabeto" é a lista completa de classes do idioma, ou null quando ainda
  * não sabemos como as pastas do dataset são nomeadas — nesse modo o
@@ -24,17 +29,17 @@ const Idiomas = (() => {
   const MAPA = {
     libras: {
       nome: "Libras", pais: "Brasil",
-      cor: "#00694A", cor2: "#F2C200",
+      cor: "#00E88A", cor2: "#FFD400", acuracia: "99,7%",
       alfabeto: AZ, excluidas: ["H", "J", "K", "X", "Z"],
     },
     asl: {
       nome: "ASL", pais: "Estados Unidos",
-      cor: "#1B3A6B", cor2: "#C1272D",
+      cor: "#5B8CFF", cor2: "#FF4D5E", acuracia: "99,2%",
       alfabeto: AZ, excluidas: ["J", "Z"],
     },
     spanish: {
       nome: "LSE", pais: "Espanha",
-      cor: "#AA151B", cor2: "#F1BF00",
+      cor: "#FF5A5A", cor2: "#FFC933", acuracia: "98,3%",
       // null até confirmarmos como as pastas do dataset nomeiam CH/LL/RR/Ñ
       alfabeto: null,
       // RR e Ñ: mesma configuração de mão que R e N, só o movimento
@@ -45,7 +50,7 @@ const Idiomas = (() => {
     },
     sibi: {
       nome: "SIBI", pais: "Indonésia",
-      cor: "#CE1126", cor2: "#FFFFFF",
+      cor: "#F4F7FA", cor2: "#FF5C5C", acuracia: "96,3%",
       // Alfabeto A-Z padrão, uma mão só (o SIBI foi historicamente adaptado
       // a partir do alfabeto manual americano). Confirmado no quadro do
       // próprio dataset: J tem gancho e Z tem o traço em zigue-zague no ar
@@ -63,6 +68,7 @@ const Idiomas = (() => {
   const pais = (id) => (existe(id) ? MAPA[id].pais : "");
   const cores = (id) => (existe(id) ? [MAPA[id].cor, MAPA[id].cor2] : ["#5C5C6B", "#92929F"]);
   const excluidas = (id) => (existe(id) ? MAPA[id].excluidas.slice() : []);
+  const acuracia = (id) => (existe(id) ? MAPA[id].acuracia || "" : "");
 
   /** Classes do idioma, ou null se o alfabeto não é conhecido de antemão. */
   function letras(id) {
@@ -72,15 +78,25 @@ const Idiomas = (() => {
     return alfabeto.filter((c) => !fora.has(c));
   }
 
-  /** Só os idiomas com alfabeto conhecido — os que fazem sentido coletar
-   * pela webcam em treinar.html (ela monta um botão por letra). */
-  const listaColetavel = () => lista().filter((id) => letras(id) !== null);
-
   const caminhoModelo = (id) => `models/${id}/alfabeto.json`;
 
+  /**
+   * Foto/desenho de como fazer aquela letra. Basta jogar o arquivo em
+   * img/alfabeto/<idioma>/<LETRA>.png — quem não tiver imagem mostra um
+   * espaço reservado, sem quebrar nada. O encodeURIComponent cuida de
+   * letras fora do A-Z (o Ñ do espanhol, por exemplo).
+   */
+  const caminhoImagem = (id, letra) =>
+    `img/alfabeto/${id}/${encodeURIComponent(letra)}.png`;
+
+  /** Foto do quadro/pôster com o alfabeto inteiro daquele idioma — diferente
+   * de caminhoImagem, que é uma foto por letra. */
+  const caminhoImagemCompleta = (id) => `img/alfabeto/${id}/completo.png`;
+
   return {
-    MAPA, PADRAO, ALFABETO, existe, lista, listaColetavel,
-    nome, pais, cores, excluidas, letras, caminhoModelo,
+    MAPA, PADRAO, ALFABETO, existe, lista,
+    nome, pais, cores, acuracia, excluidas, letras, caminhoModelo,
+    caminhoImagem, caminhoImagemCompleta,
   };
 })();
 

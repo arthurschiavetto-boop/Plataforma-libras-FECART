@@ -35,19 +35,40 @@ import features as F
 import idiomas
 
 
-def carregar(caminho, excluidas):
+def carregar(caminho, excluidas, espelhar=True):
+    """
+    Lê o dataset e calcula as features.
+
+    Com espelhar=True (padrão), cada amostra entra DUAS vezes: uma com a
+    lateralidade que veio do MediaPipe, outra com a lateralidade oposta —
+    que é o mesmo que a mão espelhada. Isso existe porque o rótulo de
+    lateralidade não é confiável: o MediaPipe assume que a imagem de
+    entrada já está espelhada (modo selfie), então o rótulo pode vir
+    trocado na foto do dataset, na webcam, ou nos dois. Se o rótulo estiver
+    errado, a mão é espelhada na hora errada e a geometria sai invertida —
+    foi o que fez o A com a mão esquerda ser lido como S.
+
+    Treinando nas duas orientações, o modelo passa a reconhecer a letra
+    independente de qual mão a pessoa usa e de o rótulo estar certo.
+    """
     with open(caminho, encoding="utf-8") as f:
         data = json.load(f)
 
     amostras = data["samples"]
     X, y, versao = [], [], F.VERSAO
+    oposto = {"Right": "Left", "Left": "Right"}
 
     if amostras and "raw" in amostras[0]:
         for s in amostras:
-            if s["label"].upper() in excluidas:
+            rotulo = s["label"].upper()
+            if rotulo in excluidas:
                 continue
-            X.append(F.v2(s["raw"], s.get("handedness", "Right")))
-            y.append(s["label"].upper())
+            lado = s.get("handedness", "Right")
+            X.append(F.v2(s["raw"], lado))
+            y.append(rotulo)
+            if espelhar:
+                X.append(F.v2(s["raw"], oposto.get(lado, "Left")))
+                y.append(rotulo)
     else:
         versao = "v1"
         print("AVISO: dataset antigo (features já normalizadas). Treinando em v1.")
@@ -71,6 +92,10 @@ def main():
                     help="padrão: ../js/modelo.json para libras, "
                          "../models/<idioma>/alfabeto.json para os demais")
     ap.add_argument("--teste", type=float, default=0.2)
+    ap.add_argument("--sem-espelhar", action="store_true",
+                    help="não duplicar cada amostra na lateralidade oposta "
+                         "(o padrão é duplicar, para o modelo funcionar com "
+                         "as duas mãos)")
     args = ap.parse_args()
 
     entrada = args.entrada or f"dataset-{args.idioma}.json"
@@ -83,7 +108,10 @@ def main():
     saida.parent.mkdir(parents=True, exist_ok=True)
 
     print(f"idioma: {idiomas.nome(args.idioma)}")
-    X, y, versao = carregar(entrada, idiomas.excluidas(args.idioma))
+    espelhar = not args.sem_espelhar
+    X, y, versao = carregar(entrada, idiomas.excluidas(args.idioma), espelhar)
+    if espelhar:
+        print("aumento por espelhamento ligado: cada amostra conta nas duas mãos")
     classes = sorted(set(y))
     print(f"{len(X)} amostras · {len(classes)} letras · features {versao} ({X.shape[1]} números)")
 
